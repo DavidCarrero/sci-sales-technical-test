@@ -66,6 +66,7 @@ services:
     restart: "no"
 
   api:
+    image: scisales-api:local
     build:
       context: .
       dockerfile: src/SciSales.Api/Dockerfile
