@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Product } from '../api/types'
 
 interface Props {
@@ -40,6 +41,11 @@ export function ProductTable({
   onDelete,
   onSelect,
 }: Props) {
+  // Deleting asks twice, in the row itself. A window.confirm would block the
+  // page, and any tool driving the browser dismisses it, which makes a correct
+  // delete look broken.
+  const [confirmingId, setConfirmingId] = useState<number | null>(null)
+
   if (loading && products.length === 0) {
     return <p className="empty">Loading the catalog...</p>
   }
@@ -63,6 +69,7 @@ export function ProductTable({
         <tbody>
           {products.map(product => {
             const created = new Date(product.createdDate)
+            const confirming = confirmingId === product.id
 
             return (
               <tr
@@ -94,26 +101,54 @@ export function ProductTable({
                 </td>
 
                 <td className="col-actions">
-                  <button
-                    type="button"
-                    className="chip"
-                    onClick={event => {
-                      event.stopPropagation()
-                      onEdit(product)
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="chip danger"
-                    onClick={event => {
-                      event.stopPropagation()
-                      onDelete(product)
-                    }}
-                  >
-                    Delete
-                  </button>
+                  {confirming ? (
+                    <>
+                      <button
+                        type="button"
+                        className="chip danger solid"
+                        onClick={event => {
+                          event.stopPropagation()
+                          setConfirmingId(null)
+                          onDelete(product)
+                        }}
+                      >
+                        Confirm
+                      </button>
+                      <button
+                        type="button"
+                        className="chip"
+                        onClick={event => {
+                          event.stopPropagation()
+                          setConfirmingId(null)
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="chip"
+                        onClick={event => {
+                          event.stopPropagation()
+                          onEdit(product)
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="chip danger"
+                        onClick={event => {
+                          event.stopPropagation()
+                          setConfirmingId(product.id)
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             )

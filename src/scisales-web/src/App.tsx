@@ -15,6 +15,7 @@ export default function App() {
   const [currency, setCurrency] = useState('COP')
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const products = useProducts(page, pageSize)
 
@@ -41,14 +42,21 @@ export default function App() {
   }
 
   async function handleDelete(product: Product) {
-    if (!confirm(`Delete "${product.name}"?`)) return
+    // The table already asked for confirmation in the row itself.
+    try {
+      await api.remove(product.id)
 
-    await api.remove(product.id)
+      if (selected?.id === product.id) setSelected(null)
+      if (editing?.id === product.id) setEditing(null)
 
-    if (selected?.id === product.id) setSelected(null)
-    if (editing?.id === product.id) setEditing(null)
-
-    await products.reload()
+      await products.reload()
+    } catch (failure) {
+      setDeleteError(
+        failure instanceof Error
+          ? `${product.name} could not be deleted: ${failure.message}`
+          : `${product.name} could not be deleted.`,
+      )
+    }
   }
 
   const total = products.data?.totalItems ?? 0
@@ -72,6 +80,7 @@ export default function App() {
           </div>
 
           {products.error && <p className="error">{products.error}</p>}
+          {deleteError && <p className="error">{deleteError}</p>}
 
           <ProductTable
             products={products.data?.items ?? []}
@@ -84,7 +93,10 @@ export default function App() {
               setSelected(product)
               setFormError(null)
             }}
-            onDelete={handleDelete}
+            onDelete={product => {
+              setDeleteError(null)
+              void handleDelete(product)
+            }}
             onSelect={setSelected}
           />
 
