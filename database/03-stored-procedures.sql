@@ -5,6 +5,10 @@
    Every data operation the API performs goes through one of these. The
    application never sends ad-hoc SQL.
 
+   They live in the products schema, not in dbo. SQL Server has no packages, and
+   a schema is the closest thing: it groups the procedures of one aggregate, so
+   the name does not have to repeat the entity. The table stays in dbo.
+
    Return codes, shared by all of them:
        0  success
        1  conflict (a product with that name already exists)
@@ -16,11 +20,18 @@
 USE SciSalesCatalog;
 GO
 
+IF SCHEMA_ID(N'products') IS NULL
+BEGIN
+    EXEC(N'CREATE SCHEMA products');
+    PRINT N'Schema products created.';
+END
+GO
+
 /* ---------------------------------------------------------------------------
    CREATE
    Returns the new identity value through @Id.
    --------------------------------------------------------------------------- */
-CREATE OR ALTER PROCEDURE dbo.usp_Products_Create
+CREATE OR ALTER PROCEDURE products.PRC_Create
     @Name        NVARCHAR(100),
     @Description NVARCHAR(500),
     @Price       DECIMAL(18, 2),
@@ -58,7 +69,7 @@ GO
 /* ---------------------------------------------------------------------------
    READ - one product
    --------------------------------------------------------------------------- */
-CREATE OR ALTER PROCEDURE dbo.usp_Products_GetById
+CREATE OR ALTER PROCEDURE products.PRC_GetById
     @Id INT
 AS
 BEGIN
@@ -80,7 +91,7 @@ GO
 /* ---------------------------------------------------------------------------
    READ - one page, newest first
    --------------------------------------------------------------------------- */
-CREATE OR ALTER PROCEDURE dbo.usp_Products_GetAll
+CREATE OR ALTER PROCEDURE products.PRC_GetAll
     @Skip INT = 0,
     @Take INT = 20
 AS
@@ -108,7 +119,7 @@ GO
 /* ---------------------------------------------------------------------------
    READ - total count, for the paging metadata
    --------------------------------------------------------------------------- */
-CREATE OR ALTER PROCEDURE dbo.usp_Products_Count
+CREATE OR ALTER PROCEDURE products.PRC_Count
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -122,7 +133,7 @@ GO
 /* ---------------------------------------------------------------------------
    UPDATE
    --------------------------------------------------------------------------- */
-CREATE OR ALTER PROCEDURE dbo.usp_Products_Update
+CREATE OR ALTER PROCEDURE products.PRC_Update
     @Id          INT,
     @Name        NVARCHAR(100),
     @Description NVARCHAR(500),
@@ -161,7 +172,7 @@ GO
 /* ---------------------------------------------------------------------------
    DELETE
    --------------------------------------------------------------------------- */
-CREATE OR ALTER PROCEDURE dbo.usp_Products_Delete
+CREATE OR ALTER PROCEDURE products.PRC_Delete
     @Id INT
 AS
 BEGIN
