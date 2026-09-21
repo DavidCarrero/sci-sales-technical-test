@@ -78,7 +78,10 @@ export default function App() {
             loading={products.loading}
             selectedId={selected?.id ?? null}
             onEdit={product => {
+              // Edit stops the row click, so it has to select the product too:
+              // working on one product should show it in both panels.
               setEditing(product)
+              setSelected(product)
               setFormError(null)
             }}
             onDelete={handleDelete}
