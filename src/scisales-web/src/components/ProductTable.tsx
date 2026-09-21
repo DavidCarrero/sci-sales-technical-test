@@ -57,7 +57,7 @@ export function ProductTable({
             <th className="col-name">Product</th>
             <th className="col-price numeric">Price</th>
             <th className="col-date">Created</th>
-            <th className="col-actions" aria-label="Actions" />
+            <th className="col-actions">Actions</th>
           </tr>
         </thead>
         <tbody>
