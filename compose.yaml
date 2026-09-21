@@ -1,0 +1,88 @@
+# SQL Server, the schema and the API with one command:
+#
+#   cp .env.example .env     (edit the password)
+#   docker compose up --build
+#
+# The API waits for sql-init to finish, so the first request already finds the
+# table and the stored procedures in place.
+
+name: sci-sales-catalog
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: scisales-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in your .env file}
+      MSSQL_PID: Developer
+      # SQL Server takes as much memory as it can unless it is told otherwise.
+      # 1 GB is enough for a catalog of this size and keeps the laptop usable.
+      MSSQL_MEMORY_LIMIT_MB: "1024"
+    # 2 GB is the minimum the container checks for at startup; below that it exits.
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  # Applies the four scripts in database/ in order, then exits. Every script is
+  # idempotent, so restarting the stack does not duplicate anything.
+  sql-init:
+    # Same image as the server: sqlcmd already lives in it, so there is nothing
+    # extra to download.
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: scisales-sql-init
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in your .env file}
+    volumes:
+      - ./database:/scripts:ro
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        set -e
+        for script in /scripts/*.sql; do
+          echo "Running $${script}..."
+          /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P "$${MSSQL_SA_PASSWORD}" -C -b -i "$${script}"
+        done
+        echo "Database ready."
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: src/SciSales.Api/Dockerfile
+    container_name: scisales-api
+    depends_on:
+      sql-init:
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      # Double underscore is how .NET reads a nested configuration key from the environment.
+      Database__ConnectionString: >-
+        Server=sqlserver,1433;Database=SciSalesCatalog;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False
+      ExchangeRates__BaseAddress: https://open.er-api.com/
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  mssql-data:
