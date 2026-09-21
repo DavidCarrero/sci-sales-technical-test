@@ -124,16 +124,18 @@ One table, `dbo.Products`:
 wider range, and it round-trips a .NET `DateTimeOffset` converted to UTC without
 losing precision.
 
-Six stored procedures, and the API calls nothing else:
+Six stored procedures, and the API calls nothing else. They live in a `products`
+schema rather than in `dbo`: SQL Server has no packages, and a schema is the
+closest thing, so the name does not have to repeat the entity.
 
 | Procedure | Used by |
 |---|---|
-| `usp_Products_Create` | POST /api/products |
-| `usp_Products_GetById` | GET /api/products/{id} |
-| `usp_Products_GetAll` | GET /api/products |
-| `usp_Products_Count` | The paging metadata of that same GET |
-| `usp_Products_Update` | PUT /api/products/{id} |
-| `usp_Products_Delete` | DELETE /api/products/{id} |
+| `products.PRC_Create` | POST /api/products |
+| `products.PRC_GetById` | GET /api/products/{id} |
+| `products.PRC_GetAll` | GET /api/products |
+| `products.PRC_Count` | The paging metadata of that same GET |
+| `products.PRC_Update` | PUT /api/products/{id} |
+| `products.PRC_Delete` | DELETE /api/products/{id} |
 
 They share three return codes: 0 for success, 1 for a duplicate name, 2 for a
 row that is not there. The repository turns each one into the matching HTTP

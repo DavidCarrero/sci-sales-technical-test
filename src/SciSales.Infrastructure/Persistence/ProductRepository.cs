@@ -38,7 +38,7 @@ internal sealed class ProductRepository(
         parameters.Add(ReturnValue, dbType: DbType.Int32, direction: ParameterDirection.ReturnValue);
 
         await using var connection = connectionFactory.Create();
-        await connection.ExecuteAsync(Command("dbo.usp_Products_Create", parameters, cancellationToken));
+        await connection.ExecuteAsync(Command("products.PRC_Create", parameters, cancellationToken));
 
         var status = parameters.Get<int>(ReturnValue);
 
@@ -59,7 +59,7 @@ internal sealed class ProductRepository(
         await using var connection = connectionFactory.Create();
 
         var row = await connection.QuerySingleOrDefaultAsync<ProductRow>(
-            Command("dbo.usp_Products_GetById", parameters, cancellationToken));
+            Command("products.PRC_GetById", parameters, cancellationToken));
 
         return row?.ToDomain();
     }
@@ -73,7 +73,7 @@ internal sealed class ProductRepository(
         await using var connection = connectionFactory.Create();
 
         var rows = await connection.QueryAsync<ProductRow>(
-            Command("dbo.usp_Products_GetAll", parameters, cancellationToken));
+            Command("products.PRC_GetAll", parameters, cancellationToken));
 
         return [.. rows.Select(row => row.ToDomain())];
     }
@@ -83,7 +83,7 @@ internal sealed class ProductRepository(
         await using var connection = connectionFactory.Create();
 
         var total = await connection.ExecuteScalarAsync<long>(
-            Command("dbo.usp_Products_Count", parameters: null, cancellationToken));
+            Command("products.PRC_Count", parameters: null, cancellationToken));
 
         return (int)total;
     }
@@ -100,7 +100,7 @@ internal sealed class ProductRepository(
         parameters.Add(ReturnValue, dbType: DbType.Int32, direction: ParameterDirection.ReturnValue);
 
         await using var connection = connectionFactory.Create();
-        await connection.ExecuteAsync(Command("dbo.usp_Products_Update", parameters, cancellationToken));
+        await connection.ExecuteAsync(Command("products.PRC_Update", parameters, cancellationToken));
 
         return parameters.Get<int>(ReturnValue) switch
         {
@@ -108,7 +108,7 @@ internal sealed class ProductRepository(
             StatusConflict => Result.Failure(ProductErrors.DuplicateName),
             StatusNotFound => Result.Failure(ProductErrors.NotFound(product.Id)),
             var unexpected => throw new InvalidOperationException(
-                $"usp_Products_Update returned an unknown status: {unexpected}."),
+                $"products.PRC_Update returned an unknown status: {unexpected}."),
         };
     }
 
@@ -119,7 +119,7 @@ internal sealed class ProductRepository(
         parameters.Add(ReturnValue, dbType: DbType.Int32, direction: ParameterDirection.ReturnValue);
 
         await using var connection = connectionFactory.Create();
-        await connection.ExecuteAsync(Command("dbo.usp_Products_Delete", parameters, cancellationToken));
+        await connection.ExecuteAsync(Command("products.PRC_Delete", parameters, cancellationToken));
 
         return parameters.Get<int>(ReturnValue) == StatusNotFound
             ? Result.Failure(ProductErrors.NotFound(id))
