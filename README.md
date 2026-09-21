@@ -5,7 +5,8 @@ procedure, and one endpoint prices a product in another currency using a public
 exchange rate API.
 
 Stack: .NET 10, ASP.NET Core Web API (minimal APIs), SQL Server 2022, Dapper for
-the stored procedure calls, xUnit v3 for the tests.
+the stored procedure calls, React 19 with TypeScript and Vite for the frontend,
+xUnit v3 for the tests.
 
 ## What is in here
 
@@ -14,7 +15,8 @@ the stored procedure calls, xUnit v3 for the tests.
 | `src/SciSales.Domain` | The Product entity, the Money and Currency value objects, and the rules they enforce. No dependencies on anything. |
 | `src/SciSales.Application` | Use cases and the two ports they need: `IProductRepository` and `IExchangeRateProvider`. |
 | `src/SciSales.Infrastructure` | The adapters: Dapper over stored procedures, and the HTTP client for the rate provider. |
-| `src/SciSales.Api` | Endpoints, error mapping to RFC 9457 problem details, and the composition root. |
+| `src/SciSales.Api` | Endpoints, error mapping to RFC 9457 problem details, and the composition root. It also serves the built frontend. |
+| `src/scisales-web` | The React frontend: the product table, the create and edit form, and the currency panel. |
 | `database/` | The four SQL scripts: database, table, stored procedures, seed data. |
 | `tests/` | Domain, use case, architecture and API integration tests. |
 
@@ -35,8 +37,8 @@ Three services come up in order: SQL Server, a short-lived container that runs
 the four scripts in `database/`, and the API. The API waits for the scripts to
 finish, so the first request already finds the table and the procedures there.
 
-- API: <http://localhost:8080>
-- Interactive documentation: <http://localhost:8080/scalar/v1>
+- The app: <http://localhost:8080>
+- Interactive API documentation: <http://localhost:8080/scalar/v1>
 - SQL Server: `localhost,1433`, user `sa`, the password from your `.env`
 
 To stop it and keep the data, `docker compose down`. To throw the database away
@@ -72,6 +74,38 @@ You need the .NET 10 SDK and a SQL Server 2019 instance or newer.
 
    It listens on <http://localhost:5163> and the documentation is at
    <http://localhost:5163/scalar/v1>.
+
+4. Start the frontend in another terminal. Vite proxies `/api` to the address
+   above, so there is no CORS to configure:
+
+   ```bash
+   cd src/scisales-web
+   npm install
+   npm run dev
+   ```
+
+   The app opens on <http://localhost:5173>. Point it somewhere else with
+   `VITE_API_URL`.
+
+## The frontend
+
+React 19 with TypeScript, built by Vite. Seven files, no state library and no
+data-fetching library: `useState`, `useEffect` and `fetch` are enough at this
+size, and the whole data flow can be read top to bottom.
+
+| File | What it does |
+|---|---|
+| `src/api/client.ts` | The only place that calls `fetch`. Turns a problem details response into an `ApiError` that carries the status and the API's `code`. |
+| `src/api/types.ts` | The shapes the API returns. |
+| `src/hooks/useProducts.ts` | Loads one page and exposes `reload()` for after a write. |
+| `src/components/ProductTable.tsx` | The table, with edit, delete and row selection. |
+| `src/components/ProductForm.tsx` | One form for create and for edit. |
+| `src/components/PricePanel.tsx` | The currency conversion, including the 503 when the provider is down. |
+| `src/App.tsx` | The page state: which page, what is being edited, what is selected. |
+
+In production there is no separate server: `npm run build` produces static files
+that the Dockerfile copies into the API's `wwwroot`, so one container serves both
+the app and the API from the same origin.
 
 ## The database
 
@@ -197,3 +231,7 @@ write to a table.
 **Nothing secret is committed.** `appsettings.Development.json` uses Windows
 authentication, the Docker password comes from `.env`, and `.env` is
 git-ignored.
+
+If your container runtime is Podman, point Testcontainers at its pipe first:
+`DOCKER_HOST=npipe://./pipe/podman-machine-default` on Windows, or the value of
+`podman machine inspect --format "{{.ConnectionInfo.PodmanPipe.Path}}"`.
