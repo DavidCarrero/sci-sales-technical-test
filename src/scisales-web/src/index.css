@@ -469,3 +469,14 @@ footer {
 footer a {
   color: var(--brand);
 }
+
+.chip.danger.solid {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.chip.danger.solid:hover:not(:disabled) {
+  background: var(--danger);
+  filter: brightness(0.92);
+}
