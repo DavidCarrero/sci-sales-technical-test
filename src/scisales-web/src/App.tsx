@@ -1,15 +1,15 @@
 import { useState } from 'react'
 import { api } from './api/client'
 import type { Product, ProductInput } from './api/types'
+import { Pagination } from './components/Pagination'
 import { PricePanel } from './components/PricePanel'
 import { ProductForm } from './components/ProductForm'
 import { ProductTable } from './components/ProductTable'
 import { useProducts } from './hooks/useProducts'
 
-const pageSize = 10
-
 export default function App() {
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [editing, setEditing] = useState<Product | null>(null)
   const [selected, setSelected] = useState<Product | null>(null)
   const [currency, setCurrency] = useState('COP')
@@ -88,21 +88,20 @@ export default function App() {
             onSelect={setSelected}
           />
 
-          <div className="paging">
-            <button type="button" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-              Previous
-            </button>
-            <span className="muted">
-              Page {page} of {Math.max(totalPages, 1)}
-            </span>
-            <button
-              type="button"
-              disabled={!products.data?.hasNextPage}
-              onClick={() => setPage(page + 1)}
-            >
-              Next
-            </button>
-          </div>
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            totalItems={total}
+            hasPrevious={products.data?.hasPreviousPage ?? false}
+            hasNext={products.data?.hasNextPage ?? false}
+            onPageChange={setPage}
+            onPageSizeChange={size => {
+              // A bigger page can leave the current number past the end.
+              setPageSize(size)
+              setPage(1)
+            }}
+          />
         </section>
 
         <div className="side">

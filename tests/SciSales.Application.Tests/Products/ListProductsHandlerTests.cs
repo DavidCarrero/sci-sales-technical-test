@@ -26,6 +26,7 @@ public sealed class ListProductsHandlerTests
         response.PageSize.ShouldBe(20);
         response.TotalItems.ShouldBe(45);
         response.TotalPages.ShouldBe(3);
+        response.HasPreviousPage.ShouldBeTrue();
         response.HasNextPage.ShouldBeTrue();
     }
 
@@ -61,6 +62,7 @@ public sealed class ListProductsHandlerTests
         var response = await new ListProductsHandler(_repository).HandleAsync(cancellationToken: Ct);
 
         response.TotalPages.ShouldBe(1);
+        response.HasPreviousPage.ShouldBeFalse();
         response.HasNextPage.ShouldBeFalse();
     }
 

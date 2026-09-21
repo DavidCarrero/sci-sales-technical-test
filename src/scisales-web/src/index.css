@@ -141,7 +141,15 @@ th,
 td {
   text-align: left;
   padding: 10px 12px;
-  vertical-align: middle;
+  /* Every cell starts at the same line, so the two-line cells (name with its
+     description, date with the relative one) line up with the single-line ones. */
+  vertical-align: top;
+}
+
+/* Vertical rules between columns keep the grid readable once rows have two lines. */
+th + th,
+td + td {
+  border-left: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
 }
 
 thead th {
@@ -278,11 +286,62 @@ tbody tr.selected {
   padding: 18px 0;
 }
 
-.paging {
+.pagination {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
   margin-top: 14px;
+  font-size: 0.85rem;
+}
+
+.pagination .range {
+  font-variant-numeric: tabular-nums;
+}
+
+.pages {
+  display: flex;
+  gap: 4px;
+}
+
+.page-button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  min-width: 32px;
+  padding: 5px 9px;
+  border-radius: 6px;
+}
+
+.page-button:hover:not(:disabled) {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.page-button.current {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  font-weight: 600;
+}
+
+.page-size {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.page-size select {
+  width: auto;
+  padding: 5px 8px;
 }
 
 button {
