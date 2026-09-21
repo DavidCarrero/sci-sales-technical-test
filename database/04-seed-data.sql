@@ -21,5 +21,7 @@ WHEN NOT MATCHED BY TARGET THEN
     INSERT (Name, Description, Price, CreatedDate)
     VALUES (source.Name, source.Description, source.Price, source.CreatedDate);
 
-PRINT CONCAT(N'Seed finished. Products in catalog: ', (SELECT COUNT(1) FROM dbo.Products));
+-- A subquery cannot go inside PRINT, so the count travels through a variable.
+DECLARE @Total INT = (SELECT COUNT(1) FROM dbo.Products);
+PRINT CONCAT(N'Seed finished. Products in catalog: ', @Total);
 GO

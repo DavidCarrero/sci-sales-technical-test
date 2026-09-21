@@ -47,8 +47,9 @@ BEGIN
         IF ERROR_NUMBER() IN (2601, 2627)
         BEGIN
             RETURN 1;
-        END
+        END;
 
+        -- THROW needs the previous statement terminated with a semicolon.
         THROW;
     END CATCH
 END
@@ -149,8 +150,9 @@ BEGIN
         IF ERROR_NUMBER() IN (2601, 2627)
         BEGIN
             RETURN 1;
-        END
+        END;
 
+        -- THROW needs the previous statement terminated with a semicolon.
         THROW;
     END CATCH
 END

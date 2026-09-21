@@ -197,3 +197,7 @@ write to a table.
 **Nothing secret is committed.** `appsettings.Development.json` uses Windows
 authentication, the Docker password comes from `.env`, and `.env` is
 git-ignored.
+
+If your container runtime is Podman, point Testcontainers at its pipe first:
+`DOCKER_HOST=npipe://./pipe/podman-machine-default` on Windows, or the value of
+`podman machine inspect --format "{{.ConnectionInfo.PodmanPipe.Path}}"`.
