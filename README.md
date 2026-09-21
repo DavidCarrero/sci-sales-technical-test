@@ -18,11 +18,12 @@ xUnit v3 for the tests.
 | `src/SciSales.Api` | Endpoints, error mapping to RFC 9457 problem details, and the composition root. It also serves the built frontend. |
 | `src/scisales-web` | The React frontend: the product table, the create and edit form, and the currency panel. |
 | `database/` | The four SQL scripts: database, table, stored procedures, seed data. |
-| `tests/` | Domain, use case, architecture and API integration tests. |
+| `tests/` | Domain, use case and API integration tests. |
 
 Dependencies point inwards: Domain knows nobody, Application knows Domain,
-Infrastructure and Api know Application. `tests/SciSales.ArchitectureTests`
-fails the build if a project reference ever breaks that.
+Infrastructure and Api know Application. The project references are what enforce
+it: `SciSales.Domain.csproj` has no package reference at all, so there is no way
+to reach EF Core or ASP.NET from inside the domain.
 
 ## Running it with Docker
 
@@ -203,7 +204,6 @@ dotnet test
   case and each way of breaking it.
 - `SciSales.Application.Tests`: each use case, the happy path and every failure
   it can return, with NSubstitute standing in for the two ports.
-- `SciSales.ArchitectureTests`: the dependency rule, checked with NetArchTest.
 - `SciSales.Api.IntegrationTests`: the real HTTP pipeline against a SQL Server
   started by Testcontainers, with the same four scripts applied to it. The only
   thing replaced is the exchange rate provider, because a test should not depend

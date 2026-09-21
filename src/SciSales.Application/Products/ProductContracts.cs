@@ -26,10 +26,12 @@ public sealed record ProductResponse(
         product.CreatedDate);
 }
 
-/// <summary>One page of products plus what the caller needs to ask for the next one.</summary>
+/// <summary>One page of products plus what the caller needs to move between pages.</summary>
 public sealed record PagedResponse<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalItems)
 {
     public int TotalPages => PageSize <= 0 ? 0 : (int)Math.Ceiling(TotalItems / (double)PageSize);
+
+    public bool HasPreviousPage => Page > 1;
 
     public bool HasNextPage => Page < TotalPages;
 }

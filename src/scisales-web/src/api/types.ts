@@ -13,6 +13,7 @@ export interface PagedResponse<T> {
   pageSize: number
   totalItems: number
   totalPages: number
+  hasPreviousPage: boolean
   hasNextPage: boolean
 }
 
