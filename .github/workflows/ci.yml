@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: src/scisales-web/package-lock.json
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      # The integration tests start SQL Server through Testcontainers. The
+      # hosted runner has Docker, so they run here for real rather than skipping.
+      - name: Test
+        run: dotnet test --no-build -c Release
+
+      - name: Install frontend dependencies
+        working-directory: src/scisales-web
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: src/scisales-web
+        run: npm run build
