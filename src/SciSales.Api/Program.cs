@@ -42,8 +42,16 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference(options => options.WithTitle("SCI Sales Catalog API"));
 }
 
-app.MapGet("/", () => Results.Redirect("/scalar/v1"))
-    .ExcludeFromDescription();
+// The React build is copied into wwwroot by the Dockerfile. When it is not there
+// (plain `dotnet run` during backend work) the root redirects to the API docs.
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+if (!File.Exists(Path.Combine(app.Environment.WebRootPath ?? "wwwroot", "index.html")))
+{
+    app.MapGet("/", () => Results.Redirect("/scalar/v1"))
+        .ExcludeFromDescription();
+}
 
 app.MapGet("/health", () => TypedResults.Ok(new { status = "healthy" }))
     .WithTags("Diagnostics")
