@@ -9,8 +9,28 @@ interface Props {
   onSelect: (product: Product) => void
 }
 
-const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
-const date = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' })
+const amount = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+const shortDate = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' })
+const fullDate = new Intl.DateTimeFormat('en-GB', { dateStyle: 'full', timeStyle: 'short' })
+
+/** "3 days ago" reads faster than a date when the row was just created. */
+function relative(value: Date): string {
+  const days = Math.round((Date.now() - value.getTime()) / 86_400_000)
+
+  if (days <= 0) return 'today'
+  if (days === 1) return 'yesterday'
+  if (days < 30) return plural(days, 'day')
+  if (days < 365) return plural(Math.round(days / 30), 'month')
+
+  return plural(Math.round(days / 365), 'year')
+}
+
+function plural(count: number, unit: string): string {
+  return `${count} ${unit}${count === 1 ? '' : 's'} ago`
+}
 
 export function ProductTable({
   products,
@@ -20,59 +40,86 @@ export function ProductTable({
   onDelete,
   onSelect,
 }: Props) {
-  if (!loading && products.length === 0) {
+  if (loading && products.length === 0) {
+    return <p className="empty">Loading the catalog...</p>
+  }
+
+  if (products.length === 0) {
     return <p className="empty">No products yet. Create the first one with the form.</p>
   }
 
   return (
-    <table className={loading ? 'loading' : undefined}>
-      <thead>
-        <tr>
-          <th className="numeric">Id</th>
-          <th>Name</th>
-          <th>Description</th>
-          <th className="numeric">Price</th>
-          <th>Created</th>
-          <th aria-label="Actions" />
-        </tr>
-      </thead>
-      <tbody>
-        {products.map(product => (
-          <tr
-            key={product.id}
-            className={product.id === selectedId ? 'selected' : undefined}
-            onClick={() => onSelect(product)}
-          >
-            <td className="numeric">{product.id}</td>
-            <td>{product.name}</td>
-            <td className="muted">{product.description}</td>
-            <td className="numeric">{money.format(product.price)}</td>
-            <td className="muted">{date.format(new Date(product.createdDate))}</td>
-            <td className="row-actions">
-              <button
-                type="button"
-                className="link"
-                onClick={event => {
-                  event.stopPropagation()
-                  onEdit(product)
-                }}
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                className="link danger"
-                onClick={event => {
-                  event.stopPropagation()
-                  onDelete(product)
-                }}
-              >
-                Delete
-              </button>
-            </td>
+    <div className="table-wrap">
+      <table className={loading ? 'loading' : undefined}>
+        <thead>
+          <tr>
+            <th className="col-id numeric">Id</th>
+            <th className="col-name">Product</th>
+            <th className="col-price numeric">Price</th>
+            <th className="col-date">Created</th>
+            <th className="col-actions" aria-label="Actions" />
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {products.map(product => {
+            const created = new Date(product.createdDate)
+
+            return (
+              <tr
+                key={product.id}
+                className={product.id === selectedId ? 'selected' : undefined}
+                onClick={() => onSelect(product)}
+              >
+                <td className="col-id numeric">
+                  <span className="id">#{product.id}</span>
+                </td>
+
+                <td className="col-name">
+                  <span className="name">{product.name}</span>
+                  {product.description && (
+                    <span className="description" title={product.description}>
+                      {product.description}
+                    </span>
+                  )}
+                </td>
+
+                <td className="col-price numeric">
+                  <span className="price-amount">{amount.format(product.price)}</span>
+                  <span className="currency">{product.currency}</span>
+                </td>
+
+                <td className="col-date">
+                  <span title={fullDate.format(created)}>{shortDate.format(created)}</span>
+                  <span className="ago">{relative(created)}</span>
+                </td>
+
+                <td className="col-actions">
+                  <button
+                    type="button"
+                    className="chip"
+                    onClick={event => {
+                      event.stopPropagation()
+                      onEdit(product)
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="chip danger"
+                    onClick={event => {
+                      event.stopPropagation()
+                      onDelete(product)
+                    }}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
   )
 }
