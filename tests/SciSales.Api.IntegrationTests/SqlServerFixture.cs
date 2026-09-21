@@ -11,8 +11,7 @@ namespace SciSales.Api.IntegrationTests;
 /// </summary>
 public sealed partial class SqlServerFixture : IAsyncLifetime
 {
-    private readonly MsSqlContainer _container =
-        new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest").Build();
+    private MsSqlContainer? _container;
 
     public string ConnectionString { get; private set; } = string.Empty;
 
@@ -23,6 +22,10 @@ public sealed partial class SqlServerFixture : IAsyncLifetime
     {
         try
         {
+            // Building the container already touches the Docker endpoint, so it
+            // belongs inside the try: without a runtime this throws before start.
+            _container = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest").Build();
+
             await _container.StartAsync(TestContext.Current.CancellationToken);
         }
         catch (Exception exception)
@@ -42,7 +45,13 @@ public sealed partial class SqlServerFixture : IAsyncLifetime
         }.ConnectionString;
     }
 
-    public async ValueTask DisposeAsync() => await _container.DisposeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        if (_container is not null)
+        {
+            await _container.DisposeAsync();
+        }
+    }
 
     private static async Task RunScriptsAsync(string connectionString, CancellationToken cancellationToken)
     {
