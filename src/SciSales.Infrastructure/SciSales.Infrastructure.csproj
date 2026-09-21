@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\SciSales.Application\SciSales.Application.csproj" />
@@ -19,5 +19,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Los adaptadores son internal; solo su proyecto de pruebas los ve. -->
+    <InternalsVisibleTo Include="SciSales.Infrastructure.Tests" />
+  </ItemGroup>
 
 </Project>
